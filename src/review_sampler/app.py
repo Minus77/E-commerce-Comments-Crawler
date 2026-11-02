@@ -9,7 +9,8 @@ from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from review_sampler.platforms import PlatformName, ParsedProduct, parse_product, platform_catalog
@@ -32,6 +33,7 @@ CSV_COLUMNS = [
     "helpful_count",
     "source_url",
 ]
+STATIC_DIR = Path(__file__).with_name("static")
 
 
 class CreateTaskRequest(BaseModel):
@@ -99,6 +101,15 @@ def create_app(store: Store, service: TaskService) -> FastAPI:
         version="0.1.0",
         lifespan=lifespan,
     )
+    application.mount(
+        "/static",
+        StaticFiles(directory=STATIC_DIR),
+        name="static",
+    )
+
+    @application.get("/", include_in_schema=False)
+    def workspace():
+        return FileResponse(STATIC_DIR / "index.html", media_type="text/html")
 
     @application.exception_handler(RequestValidationError)
     async def validation_error(_request: Request, _exc: RequestValidationError):

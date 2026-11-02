@@ -266,7 +266,7 @@ class TaskService:
         with self._lock:
             execution = self._active.get(task_id)
         if execution is None:
-            if task["status"] in {"needs_user", "interrupted"}:
+            if task["status"] in {"needs_user", "interrupted", "failed"}:
                 self.submit(task_id)
             return self.store.get_task(task_id)
         with execution.condition:

@@ -53,6 +53,22 @@ def test_demo_is_deterministic_and_capped_at_24(tmp_path):
     assert store.get_task(task["id"])["status"] == "completed"
 
 
+def test_repeated_task_reuses_reviews_and_links_them_to_the_new_task(tmp_path):
+    store = Store(tmp_path / "data.sqlite3")
+    service = TaskService(store, {"demo": DemoCollector()})
+    first = store.create_task("demo", "DEMO-001", None, "demo", 3)
+    second = store.create_task("demo", "DEMO-001", None, "demo", 3)
+
+    service.run_now(first["id"])
+    service.run_now(second["id"])
+
+    assert store.get_task(first["id"])["collected_count"] == 3
+    assert store.get_task(second["id"])["collected_count"] == 3
+    assert store.count_reviews(task_id=first["id"]) == 3
+    assert store.count_reviews(task_id=second["id"]) == 3
+    assert store.count_reviews(platform="demo", product_id="DEMO-001") == 3
+
+
 def test_repeating_run_now_does_not_insert_more_reviews(tmp_path):
     store = Store(tmp_path / "data.sqlite3")
     service = TaskService(store, {"demo": DemoCollector()})
@@ -92,6 +108,36 @@ def test_collector_exception_is_mapped_without_exposing_the_exception(tmp_path):
     assert failed["status"] == "failed"
     assert failed["error_code"] == "PARSE_ERROR"
     assert "secret" not in failed["status_reason"]
+
+
+def test_continue_retries_a_failed_task(tmp_path):
+    class FlakyCollector:
+        calls = 0
+
+        def collect(self, _task, _runtime):
+            self.calls += 1
+            if self.calls == 1:
+                raise RuntimeError("first attempt failed")
+
+    store = Store(tmp_path / "data.sqlite3")
+    collector = FlakyCollector()
+    service = TaskService(store, {"jd": collector})
+    task = store.create_task("jd", "100012043978", None, "auto", 10)
+
+    service.run_now(task["id"])
+    assert store.get_task(task["id"])["status"] == "failed"
+
+    service.continue_task(task["id"])
+
+    completed = wait_until(
+        lambda: (
+            current
+            if (current := store.get_task(task["id"]))["status"] == "completed"
+            else None
+        )
+    )
+    assert collector.calls == 2
+    assert completed["attempts"] == 1
 
 
 def test_cancel_stops_an_active_collector(tmp_path):

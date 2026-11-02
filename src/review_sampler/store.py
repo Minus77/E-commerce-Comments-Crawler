@@ -101,11 +101,27 @@ class Store:
                 ON reviews(platform, product_id, platform_review_id)
                 WHERE platform_review_id IS NOT NULL;
 
-                CREATE INDEX IF NOT EXISTS reviews_task_id
-                ON reviews(task_id);
-
                 CREATE INDEX IF NOT EXISTS reviews_product_id
                 ON reviews(platform, product_id);
+
+                CREATE TABLE IF NOT EXISTS task_reviews (
+                    task_id TEXT NOT NULL
+                        REFERENCES tasks(id) ON DELETE CASCADE,
+                    review_id INTEGER NOT NULL
+                        REFERENCES reviews(id) ON DELETE CASCADE,
+                    first_seen_at TEXT NOT NULL,
+                    last_seen_at TEXT NOT NULL,
+                    PRIMARY KEY (task_id, review_id)
+                );
+
+                INSERT OR IGNORE INTO task_reviews (
+                    task_id, review_id, first_seen_at, last_seen_at
+                )
+                SELECT task_id, id, first_seen_at, last_seen_at
+                FROM reviews;
+
+                CREATE INDEX IF NOT EXISTS task_reviews_review_id
+                ON task_reviews(review_id);
                 """
             )
             columns = {
@@ -211,17 +227,21 @@ class Store:
         rating: int | None = None,
         query: str | None = None,
         verified: bool | None = None,
-    ) -> tuple[str, list[object]]:
+    ) -> tuple[str, str, list[object]]:
+        join = ""
         clauses: list[str] = []
         values: list[object] = []
+        if task_id is not None:
+            join = " JOIN task_reviews tr ON tr.review_id = r.id"
+            clauses.append("tr.task_id = ?")
+            values.append(task_id)
         for column, value in (
-            ("task_id", task_id),
             ("platform", platform),
             ("product_id", product_id),
             ("rating", rating),
         ):
             if value is not None:
-                clauses.append(f"{column} = ?")
+                clauses.append(f"r.{column} = ?")
                 values.append(value)
         if query:
             escaped = (
@@ -229,21 +249,21 @@ class Store:
             )
             pattern = f"%{escaped}%"
             clauses.append(
-                "(author LIKE ? ESCAPE '\\' OR title LIKE ? ESCAPE '\\' "
-                "OR content LIKE ? ESCAPE '\\')"
+                "(r.author LIKE ? ESCAPE '\\' OR r.title LIKE ? ESCAPE '\\' "
+                "OR r.content LIKE ? ESCAPE '\\')"
             )
             values.extend([pattern, pattern, pattern])
         if verified is not None:
-            clauses.append("verified_purchase = ?")
+            clauses.append("r.verified_purchase = ?")
             values.append(1 if verified else 0)
         where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
-        return where, values
+        return join, where, values
 
     def count_reviews(self, **filters) -> int:
-        where, values = self._filters(**filters)
+        join, where, values = self._filters(**filters)
         with self._lock:
             row = self._db.execute(
-                f"SELECT COUNT(*) FROM reviews{where}", values
+                f"SELECT COUNT(*) FROM reviews r{join}{where}", values
             ).fetchone()
         return int(row[0])
 
@@ -259,7 +279,7 @@ class Store:
         offset: int = 0,
         limit: int = 100,
     ) -> list[dict]:
-        where, values = self._filters(
+        join, where, values = self._filters(
             task_id=task_id,
             platform=platform,
             product_id=product_id,
@@ -270,8 +290,8 @@ class Store:
         bounded = max(0, min(int(limit), 5000))
         with self._lock:
             rows = self._db.execute(
-                f"SELECT * FROM reviews{where} "
-                "ORDER BY first_seen_at, id LIMIT ? OFFSET ?",
+                f"SELECT r.* FROM reviews r{join}{where} "
+                "ORDER BY r.first_seen_at, r.id LIMIT ? OFFSET ?",
                 [*values, bounded, max(0, int(offset))],
             ).fetchall()
         return [dict(row) for row in rows]
@@ -279,7 +299,7 @@ class Store:
     def upsert_reviews(self, task_id: str, reviews: list[ReviewDraft]) -> int:
         if not reviews:
             return 0
-        inserted = 0
+        linked = 0
         now = _now()
         with self._lock, self._db:
             if not self._db.execute(
@@ -354,8 +374,16 @@ class Store:
                                 existing["id"],
                             ),
                         )
+                        linked += self._db.execute(
+                            """
+                            INSERT OR IGNORE INTO task_reviews (
+                                task_id, review_id, first_seen_at, last_seen_at
+                            ) VALUES (?, ?, ?, ?)
+                            """,
+                            (task_id, existing["id"], now, now),
+                        ).rowcount
                         continue
-                    self._db.execute(
+                    cursor = self._db.execute(
                         """
                         INSERT INTO reviews (
                             task_id, platform, product_id, platform_review_id,
@@ -387,12 +415,19 @@ class Store:
                             now,
                         ),
                     )
-                    inserted += 1
+                    linked += self._db.execute(
+                        """
+                        INSERT INTO task_reviews (
+                            task_id, review_id, first_seen_at, last_seen_at
+                        ) VALUES (?, ?, ?, ?)
+                        """,
+                        (task_id, cursor.lastrowid, now, now),
+                    ).rowcount
                 self._db.commit()
             except Exception:
                 self._db.rollback()
                 raise
-        return inserted
+        return linked
 
     def recover_interrupted(self) -> int:
         now = _now()
