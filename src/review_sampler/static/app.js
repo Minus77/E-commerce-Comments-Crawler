@@ -42,6 +42,7 @@ function cacheElements() {
     "product-input",
     "limit-input",
     "direction-input",
+    "direction-note",
     "platform-example",
     "platform-note",
     "consent-row",
@@ -238,6 +239,14 @@ function renderPlatformInfo() {
     platform.platform === "jd"
       ? "公开接口被拦截时，我会在打开的 Chrome 窗口中自行完成登录和验证。"
       : "我会在打开的 Chrome 窗口中自行完成登录和验证。";
+  elements["direction-input"].disabled = platform.platform !== "jd";
+  if (elements["direction-input"].disabled) {
+    elements["direction-input"].value = "all";
+  }
+  elements["direction-note"].textContent =
+    platform.platform === "jd"
+      ? "公开接口可按方向请求；浏览器协助在采集后筛选。"
+      : "当前通道读取页面中可见的评论，方向请在采集后筛选。";
   elements["browser-consent"].checked = false;
 }
 

@@ -69,7 +69,7 @@
             </div>
             <div class="field">
               <label for="direction-input">评论方向</label>
-              <select id="direction-input" name="review_filter">
+              <select id="direction-input" name="review_filter" aria-describedby="direction-note">
                 <option value="all">全部</option>
                 <option value="negative">负面优先</option>
                 <option value="positive">正面优先</option>
@@ -77,6 +77,7 @@
             </div>
           </div>
 
+          <p class="field-example" id="direction-note">京东公开接口可按方向请求；浏览器协助在采集后筛选。</p>
           <p class="platform-note" id="platform-note" aria-live="polite"></p>
 
           <label class="consent" id="consent-row" hidden>
