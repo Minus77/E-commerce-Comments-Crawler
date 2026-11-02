@@ -2,7 +2,9 @@
 
 评论采样台是一个本机运行的商品评论工具。它接受京东、淘宝/天猫、拼多多和 Amazon 的商品 ID 或商品链接，把采集过程保存为可恢复的任务，并统一去重、筛选和导出评论。
 
-[中文使用指南](docs/product/user-guide.zh-CN.md) · [English user guide](docs/product/user-guide.en.md) · [中文架构说明](docs/architecture/architecture.zh-CN.md) · [English architecture](docs/architecture/architecture.en.md) · [平台限制](docs/platform-policy.md)
+<a href="docs/product/user-guide.en.md"><ins>English</ins></a> · 简体中文
+
+[中文使用指南](docs/product/user-guide.zh-CN.md) · [中文架构说明](docs/architecture/architecture.zh-CN.md) · [English architecture](docs/architecture/architecture.en.md) · [平台限制](docs/platform-policy.md)
 
 ## 当前能做什么
 

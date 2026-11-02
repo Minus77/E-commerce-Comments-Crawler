@@ -1,6 +1,8 @@
 # Review Sampler User Guide
 
-[中文](user-guide.zh-CN.md) · [Architecture](../architecture/architecture.en.md) · [Platform policy](../platform-policy.md)
+English · <a href="user-guide.zh-CN.md"><ins>简体中文</ins></a>
+
+[Architecture](../architecture/architecture.en.md) · [Platform policy](../platform-policy.md)
 
 This guide describes version 0.1.0. Button labels below refer to the Chinese interface. State names and error codes use the values stored by the application.
 

@@ -1,6 +1,8 @@
 # 评论采样台使用指南
 
-[English](user-guide.en.md) · [架构说明](../architecture/architecture.zh-CN.md) · [平台限制](../platform-policy.md)
+<a href="user-guide.en.md"><ins>English</ins></a> · 简体中文
+
+[架构说明](../architecture/architecture.zh-CN.md) · [平台限制](../platform-policy.md)
 
 本文对应 0.1.0 版本。文中按钮名称与界面一致，状态名和错误码保留为代码中的写法。
 

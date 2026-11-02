@@ -1,6 +1,6 @@
 # 平台访问与使用边界 / Platform Access and Usage Boundaries
 
-评论采样台默认以中文提供文档。English version follows the Chinese section.
+<a href="#english"><ins>English</ins></a> · 简体中文
 
 ## 中文
 
