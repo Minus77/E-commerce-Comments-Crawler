@@ -1,0 +1,7 @@
+platform,product_id,platform_review_id,author,title,content,rating,created_at_text,created_at,variant,verified_purchase,helpful_count,source_url
+demo,DEMO-001,demo-001,'=2+2,五星演示,"包装完整，打印清晰。",5,2026-11-02,2026-11-02T08:00:00+08:00,标准版,1,12,
+demo,DEMO-001,demo-002,示例用户乙,"'+SUM(1,1)","设置稍多，但说明书足够。",4,2026-11-01,2026-11-01T09:30:00+08:00,无线版,0,4,
+demo,DEMO-001,demo-003,示例用户丙,多行内容示例,"'-1+2
+第二行用于检查 CSV 对多行正文的处理。",3,2026-10-31,2026-10-31T13:15:00+08:00,标准版,,2,
+demo,DEMO-001,demo-004,示例用户丁,低分演示,"连接偶尔中断，需要重新设置。",2,2026-10-30,2026-10-30T18:40:00+08:00,'@demo-variant,0,1,
+demo,DEMO-001,demo-005,示例用户戊,一星演示,"到货后无法正常使用，已申请售后。",1,2026-10-29,2026-10-29T11:05:00+08:00,标准版,1,7,
