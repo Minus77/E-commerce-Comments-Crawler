@@ -4,7 +4,7 @@
 
 <a href="docs/product/user-guide.en.md"><ins>English</ins></a> · 简体中文
 
-[中文使用指南](docs/product/user-guide.zh-CN.md) · [中文架构说明](docs/architecture/architecture.zh-CN.md) · [English architecture](docs/architecture/architecture.en.md) · [平台限制](docs/platform-policy.md)
+[使用指南](docs/product/user-guide.zh-CN.md) · [架构说明](docs/architecture/architecture.zh-CN.md) · [平台限制](docs/platform-policy.md)
 
 ## 当前能做什么
 
