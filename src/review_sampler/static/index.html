@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#EEF2EF">
+  <title>评论采样台</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#workspace">跳到采样工作区</a>
+
+  <header class="masthead">
+    <div class="masthead__top">
+      <a class="wordmark" href="/" aria-label="评论采样台首页">评论采样台</a>
+      <p class="local-note">本机运行 · 数据留在本地</p>
+    </div>
+
+    <div class="masthead__title">
+      <h1>把商品的评论，<br>放到一张桌上。</h1>
+      <div class="masthead__intro">
+        <p>粘贴商品链接或 ID，按平台允许的方式读取评论。筛选、对照和导出都在本机完成。</p>
+        <p class="policy-note">只处理你能正常查看的内容。登录、滑块和验证由你在自己的浏览器中完成。</p>
+      </div>
+    </div>
+
+    <nav class="platform-strip" id="platform-strip" aria-label="选择商品平台">
+      <p class="loading-line">正在读取平台能力…</p>
+    </nav>
+  </header>
+
+  <main class="workspace" id="workspace">
+    <aside class="task-rail" id="task-rail" aria-labelledby="sampling-heading">
+      <div class="rail-heading">
+        <div>
+          <p class="section-kicker">新建采样</p>
+          <h2 id="sampling-heading">选择商品</h2>
+        </div>
+        <button class="rail-toggle" id="rail-toggle" type="button" aria-expanded="true" aria-controls="rail-body">
+          收起
+        </button>
+      </div>
+
+      <div class="rail-body" id="rail-body">
+        <form id="task-form" novalidate>
+          <div class="field">
+            <label for="product-input">商品链接或 ID</label>
+            <input
+              id="product-input"
+              name="product"
+              type="text"
+              inputmode="text"
+              autocomplete="off"
+              aria-describedby="platform-example platform-note"
+              required
+            >
+            <p class="field-example" id="platform-example"></p>
+          </div>
+
+          <div class="field-pair">
+            <div class="field">
+              <label for="limit-input">最多保存</label>
+              <div class="number-field">
+                <input id="limit-input" name="limit" type="number" min="1" max="5000" value="100" required>
+                <span>条</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="direction-input">评论方向</label>
+              <select id="direction-input" name="review_filter" aria-describedby="direction-note">
+                <option value="all">全部</option>
+                <option value="negative">负面优先</option>
+                <option value="positive">正面优先</option>
+              </select>
+            </div>
+          </div>
+
+          <p class="field-example" id="direction-note">京东公开接口可按方向请求；浏览器协助在采集后筛选。</p>
+          <p class="platform-note" id="platform-note" aria-live="polite"></p>
+
+          <label class="consent" id="consent-row" hidden>
+            <input id="browser-consent" type="checkbox">
+            <span id="consent-copy">我会在打开的 Chrome 窗口中自行完成登录和验证。</span>
+          </label>
+
+          <p class="form-error" id="form-error" role="alert" hidden></p>
+
+          <div class="form-actions">
+            <button class="primary-action" id="start-button" type="submit">开始采样</button>
+            <button class="quiet-action" id="demo-button" type="button">载入演示</button>
+          </div>
+        </form>
+
+        <section class="task-history" aria-labelledby="tasks-heading">
+          <div class="subsection-heading">
+            <h3 id="tasks-heading">最近任务</h3>
+            <span id="task-count">0</span>
+          </div>
+          <p class="rail-empty" id="task-list-empty">还没有任务。先采集一件商品，或载入演示。</p>
+          <div class="task-list" id="task-list"></div>
+        </section>
+      </div>
+    </aside>
+
+    <section class="ledger" id="ledger" aria-labelledby="ledger-heading" tabindex="-1">
+      <div class="ledger-empty" id="ledger-empty">
+        <p class="section-kicker">评论台账</p>
+        <h2 id="ledger-heading">选一件商品，开始读评论。</h2>
+        <p>平台的限制会写在输入区。任务运行中也可以筛选已经保存的内容。</p>
+      </div>
+
+      <div class="ledger-content" id="ledger-content" hidden>
+        <header class="ledger-heading">
+          <div>
+            <p class="task-platform" id="task-platform"></p>
+            <h2 id="task-product"></h2>
+            <p class="task-caption" id="task-caption"></p>
+          </div>
+          <div class="status-block">
+            <span class="status-pill" id="task-status"></span>
+            <span class="task-total" id="task-total"></span>
+          </div>
+        </header>
+
+        <div class="progress-track" id="progress-track" hidden aria-hidden="true">
+          <span id="progress-fill"></span>
+        </div>
+
+        <div class="task-message" id="task-message">
+          <p id="task-reason"></p>
+          <p class="task-error-code" id="task-error-code" hidden></p>
+          <div class="task-actions" id="task-actions"></div>
+        </div>
+
+        <div class="ledger-tools">
+          <form class="filter-form" id="filter-form">
+            <div class="filter-keyword">
+              <label for="keyword-input">搜索评论</label>
+              <input id="keyword-input" type="search" placeholder="作者、标题或正文" autocomplete="off">
+            </div>
+            <div>
+              <label for="rating-filter">评分</label>
+              <select id="rating-filter">
+                <option value="">全部评分</option>
+                <option value="5">5 星</option>
+                <option value="4">4 星</option>
+                <option value="3">3 星</option>
+                <option value="2">2 星</option>
+                <option value="1">1 星</option>
+              </select>
+            </div>
+            <div>
+              <label for="verified-filter">购买标记</label>
+              <select id="verified-filter">
+                <option value="">全部</option>
+                <option value="true">已验证购买</option>
+                <option value="false">未标注购买</option>
+              </select>
+            </div>
+            <button class="filter-button" type="submit">筛选</button>
+            <button class="text-button" id="clear-filters" type="button">清除</button>
+          </form>
+
+          <div class="export-row">
+            <p id="review-summary" aria-live="polite">正在读取评论…</p>
+            <div class="export-actions">
+              <a class="export-link" id="export-csv" href="#" download>导出 CSV</a>
+              <a class="export-link" id="export-json" href="#" download>导出 JSON</a>
+            </div>
+          </div>
+        </div>
+
+        <p class="review-status" id="review-status" aria-live="polite"></p>
+        <div class="review-list" id="review-list"></div>
+        <button class="load-more" id="load-more" type="button" hidden>再显示 100 条</button>
+      </div>
+    </section>
+  </main>
+
+  <p class="notice" id="notice" aria-live="polite"></p>
+
+  <noscript>
+    <p class="noscript">工作台需要 JavaScript 才能创建任务和读取评论。</p>
+  </noscript>
+
+  <template id="review-template">
+    <article class="review-row">
+      <div class="review-heading">
+        <div>
+          <h3 class="review-title"></h3>
+          <p class="review-author"></p>
+        </div>
+        <p class="review-rating"></p>
+      </div>
+      <p class="review-content"></p>
+      <div class="review-footer">
+        <span class="review-meta"></span>
+        <span class="review-helpful"></span>
+      </div>
+    </article>
+  </template>
+</body>
+</html>
