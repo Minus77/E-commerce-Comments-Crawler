@@ -1,6 +1,8 @@
 # 评论采样台架构说明
 
-[English](architecture.en.md) · [使用指南](../product/user-guide.zh-CN.md) · [平台限制](../platform-policy.md)
+<a href="architecture.en.md"><ins>English</ins></a> · 简体中文
+
+[使用指南](../product/user-guide.zh-CN.md) · [平台限制](../platform-policy.md)
 
 本文说明 0.1.0 的实现。它描述仓库里现有的代码和边界，不把计划中的功能写成已经可用。
 

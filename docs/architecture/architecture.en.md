@@ -1,6 +1,8 @@
 # Review Sampler Architecture
 
-[中文](architecture.zh-CN.md) · [User guide](../product/user-guide.en.md) · [Platform policy](../platform-policy.md)
+English · <a href="architecture.zh-CN.md"><ins>简体中文</ins></a>
+
+[User guide](../product/user-guide.en.md) · [Platform policy](../platform-policy.md)
 
 This document describes the version 0.1.0 implementation. It records what the repository actually does and does not present planned capabilities as available features.
 
