@@ -61,6 +61,7 @@ class Store:
                     product_id TEXT NOT NULL,
                     input_url TEXT,
                     mode TEXT NOT NULL,
+                    review_filter TEXT NOT NULL DEFAULT 'all',
                     limit_count INTEGER NOT NULL,
                     status TEXT NOT NULL,
                     status_reason TEXT NOT NULL DEFAULT '',
@@ -107,6 +108,15 @@ class Store:
                 ON reviews(platform, product_id);
                 """
             )
+            columns = {
+                row["name"]
+                for row in self._db.execute("PRAGMA table_info(tasks)")
+            }
+            if "review_filter" not in columns:
+                self._db.execute(
+                    "ALTER TABLE tasks "
+                    "ADD COLUMN review_filter TEXT NOT NULL DEFAULT 'all'"
+                )
 
     @staticmethod
     def _task_dict(row: sqlite3.Row) -> dict:
@@ -121,22 +131,36 @@ class Store:
         input_url: str | None,
         mode: str,
         limit: int,
+        review_filter: str = "all",
     ) -> dict:
         if not platform or not product_id.strip():
             raise ValueError("商品平台和商品 ID 不能为空")
         if not 1 <= int(limit) <= 5000:
             raise ValueError("采集上限必须在 1 到 5000 之间")
+        if review_filter not in {"all", "positive", "negative"}:
+            raise ValueError("评论筛选必须为 all、positive 或 negative")
         task_id = str(uuid4())
         now = _now()
         with self._lock, self._db:
             self._db.execute(
                 """
                 INSERT INTO tasks (
-                    id, platform, product_id, input_url, mode, limit_count,
+                    id, platform, product_id, input_url, mode, review_filter,
+                    limit_count,
                     status, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, 'queued', ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, 'queued', ?, ?)
                 """,
-                (task_id, platform, product_id, input_url, mode, limit, now, now),
+                (
+                    task_id,
+                    platform,
+                    product_id,
+                    input_url,
+                    mode,
+                    review_filter,
+                    limit,
+                    now,
+                    now,
+                ),
             )
         return self.get_task(task_id)
 

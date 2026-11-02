@@ -10,6 +10,7 @@ from review_sampler.collectors.base import (
     VerificationRequired,
 )
 from review_sampler.models import ReviewDraft
+from review_sampler.net import AccessDenied, NetworkError, RateLimited
 from review_sampler.store import Store
 
 
@@ -110,7 +111,7 @@ class TaskService:
                 error_code=None,
                 finished_at=None,
             )
-            collector = self.collectors.get(task["platform"])
+            collector = self._collector_for(task)
             if collector is None:
                 self._fail(
                     task_id,
@@ -150,6 +151,27 @@ class TaskService:
                 status_reason=exc.message,
                 error_code="VERIFICATION_REQUIRED",
             )
+        except AccessDenied:
+            self.store.update_task(
+                task_id,
+                status="needs_user",
+                status_reason=(
+                    "平台要求登录或授权。请在浏览器中自行处理后继续任务。"
+                ),
+                error_code="AUTH_REQUIRED",
+            )
+        except RateLimited:
+            self._fail(
+                task_id,
+                "RATE_LIMITED",
+                "平台请求过于频繁。请稍后继续，已保存数据仍在。",
+            )
+        except NetworkError:
+            self._fail(
+                task_id,
+                "NETWORK_ERROR",
+                "连接平台时发生网络或响应错误。请稍后重试。",
+            )
         except BrowserUnavailable:
             self._fail(
                 task_id,
@@ -179,6 +201,15 @@ class TaskService:
                 if self._active.get(task_id) is execution:
                     self._active.pop(task_id, None)
         return self.store.get_task(task_id)
+
+    def _collector_for(self, task: dict):
+        mode = task["mode"]
+        platform = task["platform"]
+        if mode == "browser":
+            return self.collectors.get("browser")
+        if platform == "jd" and mode == "auto":
+            return self.collectors.get("jd")
+        return self.collectors.get(platform) or self.collectors.get("browser")
 
     def _fail(self, task_id: str, code: str, reason: str) -> None:
         task = self.store.get_task(task_id)

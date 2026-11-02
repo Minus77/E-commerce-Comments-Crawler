@@ -182,3 +182,102 @@ def test_continue_is_idempotent_while_a_task_is_active(tmp_path):
     wait_until(lambda: store.get_task(task["id"])["status"] == "completed")
 
     assert collector.calls == 1
+
+
+def test_jd_auto_mode_uses_the_direct_collector(tmp_path):
+    class RecordingCollector:
+        calls = 0
+
+        def collect(self, task, runtime):
+            self.calls += 1
+
+    store = Store(tmp_path / "data.sqlite3")
+    direct = RecordingCollector()
+    browser = RecordingCollector()
+    service = TaskService(store, {"jd": direct, "browser": browser})
+    task = store.create_task("jd", "100012043978", None, "auto", 10)
+
+    service.run_now(task["id"])
+
+    assert direct.calls == 1
+    assert browser.calls == 0
+
+
+def test_jd_browser_mode_uses_the_browser_collector(tmp_path):
+    class RecordingCollector:
+        calls = 0
+
+        def collect(self, task, runtime):
+            self.calls += 1
+
+    store = Store(tmp_path / "data.sqlite3")
+    direct = RecordingCollector()
+    browser = RecordingCollector()
+    service = TaskService(store, {"jd": direct, "browser": browser})
+    task = store.create_task("jd", "100012043978", None, "browser", 10)
+
+    service.run_now(task["id"])
+
+    assert direct.calls == 0
+    assert browser.calls == 1
+
+
+def test_other_platforms_fall_back_to_browser_collector(tmp_path):
+    class RecordingCollector:
+        calls = 0
+
+        def collect(self, task, runtime):
+            self.calls += 1
+
+    store = Store(tmp_path / "data.sqlite3")
+    browser = RecordingCollector()
+    service = TaskService(store, {"browser": browser})
+    task = store.create_task(
+        "pdd",
+        "987654",
+        "https://mobile.yangkeduo.com/goods.html?goods_id=987654",
+        "auto",
+        10,
+    )
+
+    service.run_now(task["id"])
+
+    assert browser.calls == 1
+
+
+def test_platform_access_errors_map_to_actionable_task_states(tmp_path):
+    from review_sampler.net import AccessDenied, NetworkError, RateLimited
+
+    cases = [
+        (AccessDenied("private message"), "needs_user", "AUTH_REQUIRED"),
+        (RateLimited("private message"), "failed", "RATE_LIMITED"),
+        (NetworkError("private message"), "failed", "NETWORK_ERROR"),
+    ]
+    for error, status, code in cases:
+        class FailingCollector:
+            def collect(self, _task, _runtime, error=error):
+                raise error
+
+        store = Store(tmp_path / f"{code}.sqlite3")
+        service = TaskService(store, {"jd": FailingCollector()})
+        task = store.create_task("jd", "100012043978", None, "auto", 10)
+        service.run_now(task["id"])
+        result = store.get_task(task["id"])
+
+        assert result["status"] == status
+        assert result["error_code"] == code
+        assert "private message" not in result["status_reason"]
+
+
+def test_review_filter_is_stored_with_the_task(tmp_path):
+    store = Store(tmp_path / "data.sqlite3")
+    task = store.create_task(
+        "jd",
+        "100012043978",
+        None,
+        "auto",
+        10,
+        review_filter="negative",
+    )
+
+    assert task["review_filter"] == "negative"

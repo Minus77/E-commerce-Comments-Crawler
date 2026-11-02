@@ -1,0 +1,53 @@
+{
+  "jd": {
+    "comments": [
+      {
+        "id": "jd-7",
+        "nickname": "林舟",
+        "content": "打印很快",
+        "score": 5,
+        "referenceTime": "2026-10-01 08:30:00",
+        "productSize": "标准版",
+        "usefulVoteCount": 4
+      }
+    ]
+  },
+  "taobao": {
+    "rateList": [
+      {
+        "id": "tb-8",
+        "displayUserNick": "晚风",
+        "rateContent": "包装完整",
+        "rateDate": "2026-10-02",
+        "score": 5,
+        "auctionSku": "白色",
+        "valid": true
+      }
+    ]
+  },
+  "pdd": {
+    "reviews": [
+      {
+        "reviewId": "pdd-9",
+        "userName": "小满",
+        "content": "和描述一致",
+        "rating": 4,
+        "reviewTime": "2026-10-03",
+        "specs": "标配",
+        "hasVoucher": true
+      }
+    ]
+  },
+  "amazon": {
+    "reviews": [
+      {
+        "review_id": "R-10",
+        "reviewer_name": "远山",
+        "review_body": "Works well",
+        "star_rating": "5.0 out of 5 stars",
+        "review_date": "2026-10-04",
+        "product_variant": "Black"
+      }
+    ]
+  }
+}

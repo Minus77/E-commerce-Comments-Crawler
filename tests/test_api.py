@@ -100,6 +100,24 @@ def test_browser_platform_requires_consent(client):
     assert "浏览器" in response.json()["detail"]
 
 
+def test_create_task_accepts_review_filter(client, wait_for_task):
+    response = client.post(
+        "/api/tasks",
+        json={
+            "platform": "jd",
+            "product": "100012043978",
+            "mode": "browser",
+            "limit": 10,
+            "browser_consent": True,
+            "review_filter": "negative",
+        },
+    )
+
+    assert response.status_code == 202
+    assert response.json()["review_filter"] == "negative"
+    wait_for_task(response.json()["id"])
+
+
 def test_unknown_task_returns_chinese_detail(client):
     response = client.get("/api/tasks/not-found")
 

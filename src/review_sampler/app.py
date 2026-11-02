@@ -40,6 +40,7 @@ class CreateTaskRequest(BaseModel):
     mode: Literal["auto", "browser", "demo"] = "auto"
     limit: int = Field(default=100, ge=1, le=5000)
     browser_consent: bool = False
+    review_filter: Literal["all", "negative", "positive"] = "all"
 
 
 def _browser_available() -> bool:
@@ -137,6 +138,7 @@ def create_app(store: Store, service: TaskService) -> FastAPI:
             input_url=raw if raw.startswith(("http://", "https://")) else None,
             mode=payload.mode,
             limit=payload.limit,
+            review_filter=payload.review_filter,
         )
         service.submit(task["id"])
         return _public_task(store.get_task(task["id"]))

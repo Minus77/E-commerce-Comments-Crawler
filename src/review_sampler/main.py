@@ -4,7 +4,10 @@ from pathlib import Path
 import uvicorn
 
 from review_sampler.app import create_app
+from review_sampler.collectors.browser import BrowserCollector
 from review_sampler.collectors.demo import DemoCollector
+from review_sampler.collectors.jd import JdCollector
+from review_sampler.net import PacedClient
 from review_sampler.service import TaskService
 from review_sampler.store import Store
 
@@ -17,7 +20,14 @@ def build_default_app():
         )
     )
     store = Store(database)
-    service = TaskService(store, {"demo": DemoCollector()})
+    service = TaskService(
+        store,
+        {
+            "demo": DemoCollector(),
+            "jd": JdCollector(PacedClient(min_interval=0.8)),
+            "browser": BrowserCollector(),
+        },
+    )
     return create_app(store, service)
 
 
