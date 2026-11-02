@@ -1,6 +1,7 @@
 from threading import Event
 import time
 
+from review_sampler.collectors.base import VerificationRequired
 from review_sampler.collectors.demo import DemoCollector
 from review_sampler.service import TaskService
 from review_sampler.store import Store
@@ -247,6 +248,65 @@ def test_jd_auto_mode_uses_the_direct_collector(tmp_path):
 
     assert direct.calls == 1
     assert browser.calls == 0
+
+
+def test_jd_blocked_direct_request_uses_browser_after_consent(tmp_path):
+    class BlockedCollector:
+        def collect(self, _task, _runtime):
+            raise VerificationRequired("需要人工验证")
+
+    class RecordingBrowser:
+        calls = 0
+
+        def collect(self, _task, _runtime):
+            self.calls += 1
+
+    store = Store(tmp_path / "data.sqlite3")
+    browser = RecordingBrowser()
+    service = TaskService(
+        store,
+        {"jd": BlockedCollector(), "browser": browser},
+    )
+    task = store.create_task(
+        "jd",
+        "100012043978",
+        None,
+        "auto",
+        10,
+        browser_consent=True,
+    )
+
+    service.run_now(task["id"])
+
+    assert browser.calls == 1
+    assert store.get_task(task["id"])["status"] == "completed"
+
+
+def test_jd_blocked_direct_request_does_not_open_browser_without_consent(
+    tmp_path,
+):
+    class BlockedCollector:
+        def collect(self, _task, _runtime):
+            raise VerificationRequired("需要人工验证")
+
+    class RecordingBrowser:
+        calls = 0
+
+        def collect(self, _task, _runtime):
+            self.calls += 1
+
+    store = Store(tmp_path / "data.sqlite3")
+    browser = RecordingBrowser()
+    service = TaskService(
+        store,
+        {"jd": BlockedCollector(), "browser": browser},
+    )
+    task = store.create_task("jd", "100012043978", None, "auto", 10)
+
+    service.run_now(task["id"])
+
+    assert browser.calls == 0
+    assert store.get_task(task["id"])["status"] == "needs_user"
 
 
 def test_jd_browser_mode_uses_the_browser_collector(tmp_path):

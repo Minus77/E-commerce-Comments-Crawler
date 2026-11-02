@@ -149,10 +149,18 @@ def test_list_reviews_applies_offset_and_caps_page_size(tmp_path):
 
 def test_create_task_returns_complete_task(tmp_path):
     store = Store(tmp_path / "data.sqlite3")
-    task = store.create_task("jd", "100012043978", None, "auto", 100)
+    task = store.create_task(
+        "jd",
+        "100012043978",
+        None,
+        "auto",
+        100,
+        browser_consent=True,
+    )
 
     assert task["status"] == "queued"
     assert task["collected_count"] == 0
+    assert task["browser_consent"] is True
     assert task["created_at"].endswith("+00:00")
     assert store.get_task(task["id"]) == task
     assert store.list_tasks()[0]["id"] == task["id"]

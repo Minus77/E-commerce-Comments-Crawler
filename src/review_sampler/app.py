@@ -150,6 +150,7 @@ def create_app(store: Store, service: TaskService) -> FastAPI:
             mode=payload.mode,
             limit=payload.limit,
             review_filter=payload.review_filter,
+            browser_consent=payload.browser_consent,
         )
         service.submit(task["id"])
         return _public_task(store.get_task(task["id"]))

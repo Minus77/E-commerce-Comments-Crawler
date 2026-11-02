@@ -120,7 +120,17 @@ class TaskService:
                 )
                 return self.store.get_task(task_id)
             runtime = CollectRuntime(self, task, execution)
-            collector.collect(task, runtime)
+            try:
+                collector.collect(task, runtime)
+            except (VerificationRequired, AccessDenied, RateLimited):
+                if not (
+                    task["platform"] == "jd"
+                    and task["mode"] == "auto"
+                    and task["browser_consent"]
+                    and (browser := self.collectors.get("browser"))
+                ):
+                    raise
+                browser.collect(task, runtime)
             if execution.cancelled.is_set():
                 raise TaskCancelled()
             current = self.store.get_task(task_id)

@@ -12,6 +12,7 @@ def test_workspace_page_contains_real_controls(client):
     assert 'aria-live="polite"' in html
     assert "载入演示" in html
     assert 'class="review-content"' in html
+    assert 'id="consent-copy"' in html
 
 
 def test_workspace_page_has_no_inline_event_handlers(client):
@@ -45,3 +46,4 @@ def test_client_uses_safe_dom_and_required_api_flows(client):
     assert "/api/demo" in script
     assert "setTimeout" in script
     assert "页面已处理，继续" in script
+    assert "browser_consent" in script

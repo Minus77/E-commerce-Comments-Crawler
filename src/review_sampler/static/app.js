@@ -45,6 +45,7 @@ function cacheElements() {
     "platform-example",
     "platform-note",
     "consent-row",
+    "consent-copy",
     "browser-consent",
     "form-error",
     "start-button",
@@ -224,14 +225,19 @@ function renderPlatformInfo() {
   elements["product-input"].placeholder = `例如：${platform.example}`;
   elements["platform-example"].textContent = `示例：${platform.example}`;
   const browserText = platform.browser_assist
-    ? "本机已检测到 Chrome，可在登录或验证时暂停。"
+    ? platform.platform === "jd"
+      ? "勾选下方选项后，接口被拦截时会转用本机 Chrome。"
+      : "本机已检测到 Chrome，可在登录或验证时暂停。"
     : "当前未检测到可用的 Chrome，浏览器协助可能无法启动。";
   const autoText = platform.auto_api
     ? "公开接口优先，遇到限流或验证会停下来。"
     : "没有可直接使用的公开评论接口。";
   elements["platform-note"].textContent = `${autoText} ${platform.limitation} ${browserText}`;
-  elements["consent-row"].hidden =
-    platform.platform === "jd" || !platform.browser_assist;
+  elements["consent-row"].hidden = !platform.browser_assist;
+  elements["consent-copy"].textContent =
+    platform.platform === "jd"
+      ? "公开接口被拦截时，我会在打开的 Chrome 窗口中自行完成登录和验证。"
+      : "我会在打开的 Chrome 窗口中自行完成登录和验证。";
   elements["browser-consent"].checked = false;
 }
 
@@ -336,7 +342,13 @@ function renderTask() {
   elements["task-platform"].textContent = platformName(task.platform);
   elements["task-product"].textContent = task.product_id;
   elements["task-caption"].textContent = [
-    task.mode === "demo" ? "演示任务" : "自动选择采集通道",
+    task.mode === "demo"
+      ? "演示任务"
+      : task.platform === "jd" && task.mode === "auto"
+        ? task.browser_consent
+          ? "公开接口优先，可转浏览器协助"
+          : "公开接口优先"
+        : "浏览器协助",
     `上限 ${task.limit} 条`,
     task.created_at ? `创建于 ${formatDate(task.created_at)}` : "",
   ]
@@ -648,7 +660,7 @@ async function submitTask(event) {
         mode: "auto",
         limit,
         browser_consent:
-          needsConsent && elements["browser-consent"].checked,
+          elements["browser-consent"].checked,
         review_filter: elements["direction-input"].value,
       }),
     });

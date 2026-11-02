@@ -62,6 +62,7 @@ class Store:
                     input_url TEXT,
                     mode TEXT NOT NULL,
                     review_filter TEXT NOT NULL DEFAULT 'all',
+                    browser_consent INTEGER NOT NULL DEFAULT 0,
                     limit_count INTEGER NOT NULL,
                     status TEXT NOT NULL,
                     status_reason TEXT NOT NULL DEFAULT '',
@@ -133,11 +134,17 @@ class Store:
                     "ALTER TABLE tasks "
                     "ADD COLUMN review_filter TEXT NOT NULL DEFAULT 'all'"
                 )
+            if "browser_consent" not in columns:
+                self._db.execute(
+                    "ALTER TABLE tasks "
+                    "ADD COLUMN browser_consent INTEGER NOT NULL DEFAULT 0"
+                )
 
     @staticmethod
     def _task_dict(row: sqlite3.Row) -> dict:
         result = dict(row)
         result["limit"] = result.pop("limit_count")
+        result["browser_consent"] = bool(result["browser_consent"])
         return result
 
     def create_task(
@@ -148,6 +155,7 @@ class Store:
         mode: str,
         limit: int,
         review_filter: str = "all",
+        browser_consent: bool = False,
     ) -> dict:
         if not platform or not product_id.strip():
             raise ValueError("商品平台和商品 ID 不能为空")
@@ -162,9 +170,9 @@ class Store:
                 """
                 INSERT INTO tasks (
                     id, platform, product_id, input_url, mode, review_filter,
-                    limit_count,
+                    browser_consent, limit_count,
                     status, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, 'queued', ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'queued', ?, ?)
                 """,
                 (
                     task_id,
@@ -173,6 +181,7 @@ class Store:
                     input_url,
                     mode,
                     review_filter,
+                    int(browser_consent),
                     limit,
                     now,
                     now,
